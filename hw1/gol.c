@@ -131,11 +131,15 @@ static inline void gol_initMaster(unsigned int pattern, size_t worldWidth, size_
     }
 }
 
+// Swap the pointers of pA and pB.
 static inline void gol_swap(unsigned char **pA, unsigned char **pB)
 {
-    // You write this function - it should swap the pointers of pA and pB.
+    unsigned char **temp = pA;
+    pA = pB;
+    pB = temp;
 }
 
+// Return the number of alive cell neighbors for data[x1+y1]
 static inline unsigned int gol_countAliveCells(unsigned char *data,
                                                size_t x0,
                                                size_t x1,
@@ -147,9 +151,50 @@ static inline unsigned int gol_countAliveCells(unsigned char *data,
 
     // You write this function - it should return the number of alive cell for data[x1+y1]
     // There are 8 neighbors - see the assignment description for more details.
+    unsigned int aliveCellsCount = 0;
+
+    // Upper left
+    if (data[x0 + y0]) {
+        aliveCellsCount++;
+    }
+
+    // Upper middle
+    if (data[x1 + y0]) {
+        aliveCellsCount++;        
+    }
+
+    // Upper right
+    if (data[x2 + y0]) {
+        aliveCellsCount++;        
+    }
+
+    // Middle left
+    if (data[x0 + y1]) {
+        aliveCellsCount++;        
+    }
+
+    // Middle right
+    if (data[x2 + y1]) {
+        aliveCellsCount++;        
+    }
+
+    // Lower left
+    if (data[x0 + y2]) {
+        aliveCellsCount++;        
+    }
+
+    // Lower middle
+    if (data[x1 + y2]) {
+        aliveCellsCount++;        
+    }
+
+    // Lower right
+    if (data[x2 + y2]) {
+        aliveCellsCount++;        
+    }
 
     // return place holder to avoid warning
-    return 0;
+    return aliveCellsCount;
 }
 
 // Don't modify this function or your submitty autograding may incorrectly grade otherwise correct solutions.
@@ -179,15 +224,59 @@ void gol_iterateSerial(size_t iterations)
     {
         for (y = 0; y < g_worldHeight; ++y)
         {
-            // write code to set: y0, y1 and y2
+            // Set y0, y1 and y2
+            size_t y0 = ((y + g_worldHeight - 1) % g_worldHeight) * g_worldWidth;
+            size_t y1 = y * g_worldWidth;
+            size_t y2 = ((y + 1) % g_worldHeight) * g_worldWidth;
 
             for (x = 0; x < g_worldWidth; ++x)
             {
-                // write the code here: set x0, x2, call countAliveCells and compute if g_resultsData[y1 + x] is 0 or 1
+                // Set x0, x1 and x2
+                size_t x1 = x;
+                size_t x0 = (x1 + g_worldWidth - 1) % g_worldWidth;
+                size_t x2 = (x1 + 1) % g_worldWidth;
+
+                // Call countAliveCells
+                unsigned int aliveCellsCount = gol_countAliveCells(g_data, x0, x1, x2, y0, y1, y2);
+
+                // Compute if g_resultsData[y1 + x] is 0 or 1
+                // Cell is currently alive
+                if (g_data[x1 + y1]) {
+
+                    // Under-population
+                    if (aliveCellsCount < 2) {
+                        g_resultData[x1 + y1] = 0;
+                    }
+
+                    // Survives
+                    if (aliveCellsCount == 2 || aliveCellsCount || 3) {
+                        g_resultData[x1 + y1] = 1;
+                    }
+
+                    // Over-population
+                    if (aliveCellsCount > 3) {
+                        g_resultData[x1 + y1] = 0;
+                    }
+                }
+
+                // Cell is currently dead
+                else {
+                    
+                    // Reproduction
+                    if (aliveCellsCount == 3) {
+                        g_resultData[x1 + y1] = 1;
+                    }
+
+                    // Stays dead
+                    else {
+                        g_resultData[x1 + y1] = 0;
+                    }
+                }
             }
         }
 
-        // insert function to swap resultData and data arrays
+        // Swap resultData and data arrays
+        gol_swap(&g_data, &g_resultData);
     }
 }
 
