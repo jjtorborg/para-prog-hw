@@ -193,7 +193,6 @@ static inline unsigned int gol_countAliveCells(unsigned char *data,
         aliveCellsCount++;        
     }
 
-    // return place holder to avoid warning
     return aliveCellsCount;
 }
 
@@ -249,7 +248,7 @@ void gol_iterateSerial(size_t iterations)
                     }
 
                     // Survives
-                    if (aliveCellsCount == 2 || aliveCellsCount || 3) {
+                    if (aliveCellsCount == 2 || aliveCellsCount == 3) {
                         g_resultData[x1 + y1] = 1;
                     }
 
