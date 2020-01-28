@@ -134,9 +134,9 @@ static inline void gol_initMaster(unsigned int pattern, size_t worldWidth, size_
 // Swap the pointers of pA and pB.
 static inline void gol_swap(unsigned char **pA, unsigned char **pB)
 {
-    unsigned char **temp = pA;
-    pA = pB;
-    pB = temp;
+    unsigned char *temp = *pA;
+    *pA = *pB;
+    *pB = temp;
 }
 
 // Return the number of alive cell neighbors for data[x1+y1]
@@ -284,23 +284,23 @@ int main(int argc, char *argv[])
 {
     unsigned int pattern = 0;
     unsigned int worldSize = 0;
-    unsigned int itterations = 0;
+    unsigned int iterations = 0;
 
     printf("This is the Game of Life running in serial on a CPU.\n");
 
     if (argc != 4)
     {
-        printf("GOL requires 3 arguments: pattern number, sq size of the world and the number of itterations, e.g. ./gol 0 32 2 \n");
+        printf("GOL requires 3 arguments: pattern number, sq size of the world and the number of iterations, e.g. ./gol 0 32 2 \n");
         exit(-1);
     }
 
     pattern = atoi(argv[1]);
     worldSize = atoi(argv[2]);
-    itterations = atoi(argv[3]);
+    iterations = atoi(argv[3]);
 
     gol_initMaster(pattern, worldSize, worldSize);
 
-    gol_iterateSerial(itterations);
+    gol_iterateSerial(iterations);
     printf("######################### FINAL WORLD IS ###############################\n");
     gol_printWorld();
 
