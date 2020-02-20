@@ -1,7 +1,7 @@
 // Para Prog: Assignment 2
 
 // References: https://devblogs.nvidia.com/even-easier-introduction-cuda/
-//      Line 285 - uses the equation presented in this article
+//      Line 285 - uses the equation presented in this article ^^^
 //               -> int numBlocks = (N + blockSize - 1) / blockSize;
 
 #include <stdio.h>
@@ -166,12 +166,12 @@ static inline void gol_swap(unsigned char **pA, unsigned char **pB)
 
 // Return the number of alive cell neighbors for data[x1+y1]
 __device__ static inline unsigned int gol_countAliveCells(unsigned char *data,
-                                               size_t x0,
-                                               size_t x1,
-                                               size_t x2,
-                                               size_t y0,
-                                               size_t y1,
-                                               size_t y2)
+                                                          size_t x0,
+                                                          size_t x1,
+                                                          size_t x2,
+                                                          size_t y0,
+                                                          size_t y1,
+                                                          size_t y2)
 {
 
     // Compute the number of alive cells by summing the states of each surrounding cell
@@ -282,7 +282,7 @@ void gol_kernelLaunch(unsigned char** d_data,
     // Run the kernel for input num iterations over input num threads
     for (size_t i = 0; i < iterationsCount; i++) {
 
-        // Compute block number based on CUDA docs (devblogs.nvidia.com)
+        // Compute block number based on CUDA docs (devblogs.nvidia.com -> see References "line 3")
         int blocksCount = ((g_worldWidth * g_worldHeight) + threadsCount - 1) / threadsCount;
 
         // Kernel call
