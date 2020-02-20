@@ -1,3 +1,9 @@
+// Para Prog: Assignment 2
+
+// References: https://devblogs.nvidia.com/even-easier-introduction-cuda/
+//      Line 285 - uses the equation presented in this article
+//               -> int numBlocks = (N + blockSize - 1) / blockSize;
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -23,10 +29,10 @@ size_t g_worldHeight = 0;
 size_t g_dataLength = 0; // g_worldWidth * g_worldHeight
 
 // Method for properly zeroing out all shared memory upon init
-void sharedMemoryInit(unsigned char *g_data, size_t g_dataLength)
+void sharedMemoryInit(unsigned char **d_data, size_t d_dataLength)
 {
-    cudaMallocManaged(&g_data, (g_dataLength * sizeof(unsigned char)));
-    memset(&g_data[0], 0, sizeof(g_data));
+    cudaMallocManaged(d_data, (d_dataLength * sizeof(unsigned char)));
+    memset(*d_data, 0, sizeof(*d_data));
 }
 
 static inline void gol_initAllZeros(size_t worldWidth, size_t worldHeight)
@@ -36,8 +42,8 @@ static inline void gol_initAllZeros(size_t worldWidth, size_t worldHeight)
     g_dataLength = g_worldWidth * g_worldHeight;
 
     // init the shared memory to all zeros
-    sharedMemoryInit(g_data, g_dataLength);
-    sharedMemoryInit(g_resultData, g_dataLength);
+    sharedMemoryInit(&g_data, g_dataLength);
+    sharedMemoryInit(&g_resultData, g_dataLength);
 }
 
 static inline void gol_initAllOnes(size_t worldWidth, size_t worldHeight)
@@ -49,7 +55,7 @@ static inline void gol_initAllOnes(size_t worldWidth, size_t worldHeight)
     g_dataLength = g_worldWidth * g_worldHeight;
 
     // Init the shared memory of the original grid to all zeros
-    sharedMemoryInit(g_data, g_dataLength);
+    sharedMemoryInit(&g_data, g_dataLength);
 
     // set all rows of world to true
     for (i = 0; i < g_dataLength; i++)
@@ -58,7 +64,7 @@ static inline void gol_initAllOnes(size_t worldWidth, size_t worldHeight)
     }
 
     // Init the shared memory of the reuslt grid to all zeros
-    sharedMemoryInit(g_resultData, g_dataLength);
+    sharedMemoryInit(&g_resultData, g_dataLength);
 }
 
 static inline void gol_initOnesInMiddle(size_t worldWidth, size_t worldHeight)
@@ -70,7 +76,7 @@ static inline void gol_initOnesInMiddle(size_t worldWidth, size_t worldHeight)
     g_dataLength = g_worldWidth * g_worldHeight;
 
     // Init the shared memory of the original grid to all zeros
-    sharedMemoryInit(g_data, g_dataLength);
+    sharedMemoryInit(&g_data, g_dataLength);
 
     // set first 1 rows of world to true
     for (i = 10 * g_worldWidth; i < 11 * g_worldWidth; i++)
@@ -82,7 +88,7 @@ static inline void gol_initOnesInMiddle(size_t worldWidth, size_t worldHeight)
     }
 
     // Init the shared memory of the reuslt grid to all zeros
-    sharedMemoryInit(g_resultData, g_dataLength);
+    sharedMemoryInit(&g_resultData, g_dataLength);
 }
 
 static inline void gol_initOnesAtCorners(size_t worldWidth, size_t worldHeight)
@@ -92,7 +98,7 @@ static inline void gol_initOnesAtCorners(size_t worldWidth, size_t worldHeight)
     g_dataLength = g_worldWidth * g_worldHeight;
 
     // Init the shared memory of the original grid to all zeros
-    sharedMemoryInit(g_data, g_dataLength);
+    sharedMemoryInit(&g_data, g_dataLength);
 
     g_data[0] = 1;                                                 // upper left
     g_data[worldWidth - 1] = 1;                                    // upper right
@@ -100,7 +106,7 @@ static inline void gol_initOnesAtCorners(size_t worldWidth, size_t worldHeight)
     g_data[(worldHeight * (worldWidth - 1)) + worldWidth - 1] = 1; // lower right
 
     // Init the shared memory of the reuslt grid to all zeros
-    sharedMemoryInit(g_resultData, g_dataLength);
+    sharedMemoryInit(&g_resultData, g_dataLength);
 }
 
 static inline void gol_initSpinnerAtCorner(size_t worldWidth, size_t worldHeight)
@@ -110,14 +116,14 @@ static inline void gol_initSpinnerAtCorner(size_t worldWidth, size_t worldHeight
     g_dataLength = g_worldWidth * g_worldHeight;
 
     // Init the shared memory of the original grid to all zeros
-    sharedMemoryInit(g_data, g_dataLength);
+    sharedMemoryInit(&g_data, g_dataLength);
 
     g_data[0] = 1;              // upper left
     g_data[1] = 1;              // upper left +1
     g_data[worldWidth - 1] = 1; // upper right
 
     // Init the shared memory of the reuslt grid to all zeros
-    sharedMemoryInit(g_resultData, g_dataLength);
+    sharedMemoryInit(&g_resultData, g_dataLength);
 }
 
 static inline void gol_initMaster(unsigned int pattern, size_t worldWidth, size_t worldHeight)
@@ -159,7 +165,7 @@ static inline void gol_swap(unsigned char **pA, unsigned char **pB)
 }
 
 // Return the number of alive cell neighbors for data[x1+y1]
-static inline unsigned int gol_countAliveCells(unsigned char *data,
+__device__ static inline unsigned int gol_countAliveCells(unsigned char *data,
                                                size_t x0,
                                                size_t x1,
                                                size_t x2,
@@ -168,49 +174,15 @@ static inline unsigned int gol_countAliveCells(unsigned char *data,
                                                size_t y2)
 {
 
-    // You write this function - it should return the number of alive cell for data[x1+y1]
-    // There are 8 neighbors - see the assignment description for more details.
-    unsigned int aliveCellsCount = 0;
-
-    // Upper left
-    if (data[x0 + y0]) {
-        aliveCellsCount++;
-    }
-
-    // Upper middle
-    if (data[x1 + y0]) {
-        aliveCellsCount++;        
-    }
-
-    // Upper right
-    if (data[x2 + y0]) {
-        aliveCellsCount++;        
-    }
-
-    // Middle left
-    if (data[x0 + y1]) {
-        aliveCellsCount++;        
-    }
-
-    // Middle right
-    if (data[x2 + y1]) {
-        aliveCellsCount++;        
-    }
-
-    // Lower left
-    if (data[x0 + y2]) {
-        aliveCellsCount++;        
-    }
-
-    // Lower middle
-    if (data[x1 + y2]) {
-        aliveCellsCount++;        
-    }
-
-    // Lower right
-    if (data[x2 + y2]) {
-        aliveCellsCount++;        
-    }
+    // Compute the number of alive cells by summing the states of each surrounding cell
+    unsigned int aliveCellsCount = data[x0 + y0] +
+                                   data[x1 + y0] +
+                                   data[x2 + y0] +
+                                   data[x0 + y1] +
+                                   data[x2 + y1] +
+                                   data[x0 + y2] +
+                                   data[x1 + y2] +
+                                   data[x2 + y2];
 
     return aliveCellsCount;
 }
@@ -234,14 +206,14 @@ static inline void gol_printWorld()
 }
 
 // Main CUDA kernel function - handles parallel threading
-__global__ void gol_kernel(const unsigned char* d_data,
+__global__ void gol_kernel(unsigned char* d_data,
                            unsigned char* d_resultData,
                            unsigned int worldWidth,
                            unsigned int worldHeight)
 {
 
     // Iterate over each cell of the grid
-    for (index = blockIdx.x * blockDim.x + threadIdx.x;
+    for (unsigned int index = blockIdx.x * blockDim.x + threadIdx.x;
          index < worldWidth * worldHeight;
          index += blockDim.x * gridDim.x) {
 
@@ -263,21 +235,20 @@ __global__ void gol_kernel(const unsigned char* d_data,
         // Call countAliveCells
         unsigned int aliveCellsCount = gol_countAliveCells(d_data, x0, x1, x2, y0, y1, y2);
 
-        // Compute if d_resultsData[y1 + x] is 0 or 1
         // Cell is currently alive
         if (d_data[x1 + y1]) {
 
-            // Under-population
+            // Under-population (curr cell dies)
             if (aliveCellsCount < 2) {
                 d_resultData[x1 + y1] = 0;
             }
 
-            // Survives
+            // Optimal population (curr cell survives)
             if (aliveCellsCount == 2 || aliveCellsCount == 3) {
                 d_resultData[x1 + y1] = 1;
             }
 
-            // Over-population
+            // Over-population (curr cell dies)
             if (aliveCellsCount > 3) {
                 d_resultData[x1 + y1] = 0;
             }
@@ -286,20 +257,17 @@ __global__ void gol_kernel(const unsigned char* d_data,
         // Cell is currently dead
         else {
             
-            // Reproduction
+            // Reproduction (curr cell becomes alive)
             if (aliveCellsCount == 3) {
                 d_resultData[x1 + y1] = 1;
             }
 
-            // Stays dead
+            // Cell stays dead
             else {
                 d_resultData[x1 + y1] = 0;
             }
         }
     }
-
-    // Swap resultData and data arrays
-    gol_swap(&d_data, &d_resultData);
 }
 
 // Launches the parallel computation of the world for a defined number of iterations
@@ -310,11 +278,18 @@ void gol_kernelLaunch(unsigned char** d_data,
                       size_t iterationsCount,
                       ushort threadsCount)
 {
+
     // Run the kernel for input num iterations over input num threads
     for (size_t i = 0; i < iterationsCount; i++) {
 
+        // Compute block number based on CUDA docs (devblogs.nvidia.com)
+        int blocksCount = ((g_worldWidth * g_worldHeight) + threadsCount - 1) / threadsCount;
+
         // Kernel call
-        gol_kernel<<<1, threadsCount>>>(*d_data, *d_resultData, worldWidth, worldHeight);
+        gol_kernel<<<blocksCount, threadsCount>>>(*d_data, *d_resultData, worldWidth, worldHeight);
+
+        // Swap resultData and data arrays
+        gol_swap(d_data, d_resultData);
     }
 
     // Need to call device synchronize before returning to main
@@ -326,12 +301,14 @@ int main(int argc, char *argv[])
     unsigned int pattern = 0;
     unsigned int worldSize = 0;
     unsigned int iterations = 0;
+    unsigned int threads = 0;
+    unsigned int outputOn = 0;
 
-    printf("This is the Game of Life running in parallel on GPU(s).\n");
+    //printf("This is the Game of Life running in parallel on GPU(s).\n");
 
-    if (argc != 4)
+    if (argc != 6)
     {
-        printf("GOL requires 3 arguments: pattern number, sq size of the world and the number of iterations, e.g. ./gol 0 32 2 \n");
+        fprintf(stderr, "GOL requires 5 arguments: pattern number, sq size of the world, the number of iterations, the number of threads per block and if output is on e.g. ./gol 0 32 2 2 1\n");
         exit(-1);
     }
 
@@ -339,17 +316,21 @@ int main(int argc, char *argv[])
     worldSize = atoi(argv[2]);
     iterations = atoi(argv[3]);
     threads = atoi(argv[4]);
+    outputOn = atoi(argv[5]);
 
     gol_initMaster(pattern, worldSize, worldSize);
 
     // Launches the parallel computation of the world for a defined number of iterations
     gol_kernelLaunch(&g_data, &g_resultData, g_worldWidth, g_worldHeight, iterations, threads);
-                                                                                                                                                                                        
-    printf("######################### FINAL WORLD IS ###############################\n");                                                                  
-    gol_printWorld();
+                
+    // Print statements for case of output on
+    if (outputOn) {
+        printf("######################### FINAL WORLD IS ###############################\n");                                                                  
+        gol_printWorld();
+    }
 
     cudaFree(g_data);
     cudaFree(g_resultData);
 
-    return true;
+    return EXIT_SUCCESS;
 }
