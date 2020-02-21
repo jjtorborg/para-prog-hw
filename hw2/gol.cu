@@ -329,6 +329,7 @@ int main(int argc, char *argv[])
         gol_printWorld();
     }
 
+    // Return any memory to system
     cudaFree(g_data);
     cudaFree(g_resultData);
 
