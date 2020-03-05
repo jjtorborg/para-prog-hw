@@ -144,6 +144,10 @@ extern inline void gol_initMaster(unsigned int pattern, size_t worldWidth, size_
         exit(-1);
     }
 
+    // Alloate myrank chunk per pattern and ghost rows
+    // TODO: Implement
+
+    // Select world pattern from presets
     switch (pattern)
     {
     case 0:

@@ -26,12 +26,14 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
+    // Read in args
     pattern = atoi(argv[1]);
     worldSize = atoi(argv[2]);
     iterations = atoi(argv[3]);
     threads = atoi(argv[4]);
     outputOn = atoi(argv[5]);
 
+    // Rank variable inits
     int myrank = 0;
     int numranks = 0;
 
@@ -43,19 +45,18 @@ int main(int argc, char *argv[])
     // Start time with MPI_Wtime
     double startTime = MPI_Wtime();
 
-    // Allocate myrank chunk per pattern (dont forget ghost rows)
-
     // Init the world
     gol_initMaster(pattern, worldSize, worldSize, myrank);
 
-    // Run simluatoin for input number of iterations
+    // Run simluation for input number of iterations
     for (int i = 0; i < iterations; i++)
     {
         // Exchange row data with MPI ranks
         unsigned char *firstGhostRow;
-        unsigned char *secondGhostRow;
-        
+        unsigned char *lastGhostRow;
+
         // MPI_Isend/Irecv
+        // TODO: Implement
 
         // Launches the parallel computation of the world
         gol_kernelLaunch(threads);
