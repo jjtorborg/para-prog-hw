@@ -1,5 +1,6 @@
 // Para Prog: Assignment 3 GOL MPI
 
+// C Standard headers
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -39,9 +40,8 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
     MPI_Comm_size(MPI_COMM_WORLD, &numranks);
 
-    // Set CUDA device based on MPI rank
-
     // Start time with MPI_Wtime
+    double startTime = MPI_Wtime();
 
     // Allocate myrank chunk per pattern (dont forget ghost rows)
 
@@ -52,6 +52,9 @@ int main(int argc, char *argv[])
     for (int i = 0; i < iterations; i++)
     {
         // Exchange row data with MPI ranks
+        unsigned char *firstGhostRow;
+        unsigned char *secondGhostRow;
+        
         // MPI_Isend/Irecv
 
         // Launches the parallel computation of the world
@@ -67,9 +70,10 @@ int main(int argc, char *argv[])
     // End MPI_Wtime measurement
     if (myrank == 0)
     {
-        // end time with MPI_Wtime
-        // printf MPI_Wtime
-        // performance results
+        double endTime = MPI_Wtime();
+
+        // Output the total time
+        printf("Elapsed time: %d\n", endTime - startTime);
     }
                 
     // Print statements for case of output on
@@ -78,7 +82,7 @@ int main(int argc, char *argv[])
         gol_printWorld();
     }
 
-    // Finalize MPI
+    // Need to call this
     MPI_Finalize();
 
     // Cleanup any shared memory after finished
