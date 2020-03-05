@@ -31,12 +31,17 @@ int main(int argc, char *argv[])
     threads = atoi(argv[4]);
     outputOn = atoi(argv[5]);
 
+    int myrank = 0;
+    int numranks = 0;
+
     // Initialize the MPI environment
     MPI_Init(NULL, NULL);
+    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+    MPI_Comm_size(MPI_COMM_WORLD, &numranks);
 
     // 
 
-    gol_initMaster(pattern, worldSize, worldSize);
+    gol_initMaster(pattern, worldSize, worldSize, myrank);
 
     // Launches the parallel computation of the world for a defined number of iterations
     gol_kernelLaunch(iterations, threads);

@@ -8,7 +8,7 @@
 
 extern void gol_kernelLaunch(size_t iterationsCount, ushort threadsCount);
 
-extern inline void gol_initMaster(unsigned int pattern, size_t worldWidth, size_t worldHeight);
+extern inline void gol_initMaster(unsigned int pattern, size_t worldWidth, size_t worldHeight, int myrank);
 
 extern inline void gol_printWorld();
 

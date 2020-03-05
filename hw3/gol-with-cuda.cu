@@ -126,8 +126,23 @@ extern inline void gol_initSpinnerAtCorner(size_t worldWidth, size_t worldHeight
     sharedMemoryInit(&g_resultData, g_dataLength);
 }
 
-extern inline void gol_initMaster(unsigned int pattern, size_t worldWidth, size_t worldHeight)
+extern inline void gol_initMaster(unsigned int pattern, size_t worldWidth, size_t worldHeight, int myrank)
 {
+    // Init cudaDeviceCount for use later
+    int cudaDeviceCount = 0;
+    
+    if( (cE = cudaGetDeviceCount( &cudaDeviceCount)) != cudaSuccess )
+    {
+        printf(" Unable to determine cuda device count, error is %d, count is %d\n",cE, cudaDeviceCount );
+        exit(-1);
+    }
+    
+    if( (cE = cudaSetDevice( myrank % cudaDeviceCount )) != cudaSuccess )
+    {
+        printf(" Unable to have rank %d set to cuda device %d, error is %d \n",myrank, (myrank % cudaDeviceCount), cE);
+        exit(-1);
+    }
+
     switch (pattern)
     {
     case 0:
