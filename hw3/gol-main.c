@@ -39,18 +39,47 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
     MPI_Comm_size(MPI_COMM_WORLD, &numranks);
 
-    // 
+    // Set CUDA device based on MPI rank
 
+    // Start time with MPI_Wtime
+
+    // Allocate myrank chunk per pattern (dont forget ghost rows)
+
+    // Init the world
     gol_initMaster(pattern, worldSize, worldSize, myrank);
 
-    // Launches the parallel computation of the world for a defined number of iterations
-    gol_kernelLaunch(iterations, threads);
+    // Run simluatoin for input number of iterations
+    for (int i = 0; i < iterations; i++)
+    {
+        // Exchange row data with MPI ranks
+        // MPI_Isend/Irecv
+
+        // Launches the parallel computation of the world
+        gol_kernelLaunch(threads);
+
+        // Need to call device synchronize (maybe, at some point)
+        cudaDeviceSynchronize();
+    }
+
+    // Need to call this
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    // End MPI_Wtime measurement
+    if (myrank == 0)
+    {
+        // end time with MPI_Wtime
+        // printf MPI_Wtime
+        // performance results
+    }
                 
     // Print statements for case of output on
     if (outputOn) {
         printf("######################### FINAL WORLD IS ###############################\n");                                                                  
         gol_printWorld();
     }
+
+    // Finalize MPI
+    MPI_Finalize();
 
     // Cleanup any shared memory after finished
     cudaCleanup();

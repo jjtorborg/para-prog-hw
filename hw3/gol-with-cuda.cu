@@ -294,22 +294,14 @@ __global__ extern void gol_kernel(unsigned char* d_data,
 }
 
 // Launches the parallel computation of the world for a defined number of iterations
-extern void gol_kernelLaunch(size_t iterationsCount, ushort threadsCount)
+extern void gol_kernelLaunch(ushort threadsCount)
 {
+    // Compute block number based on CUDA docs (devblogs.nvidia.com -> see References "line 3")
+    int blocksCount = ((g_worldWidth * g_worldHeight) + threadsCount - 1) / threadsCount;
 
-    // Run the kernel for input num iterations over input num threads
-    for (size_t i = 0; i < iterationsCount; i++) {
+    // Kernel call
+    gol_kernel<<<blocksCount, threadsCount>>>(g_data, g_resultData, g_worldWidth, g_worldHeight);
 
-        // Compute block number based on CUDA docs (devblogs.nvidia.com -> see References "line 3")
-        int blocksCount = ((g_worldWidth * g_worldHeight) + threadsCount - 1) / threadsCount;
-
-        // Kernel call
-        gol_kernel<<<blocksCount, threadsCount>>>(g_data, g_resultData, g_worldWidth, g_worldHeight);
-
-        // Swap resultData and data arrays
-        gol_swap(g_data, g_resultData);
-    }
-
-    // Need to call device synchronize before returning to main
-    cudaDeviceSynchronize();
+    // Swap resultData and data arrays
+    gol_swap(g_data, g_resultData);
 } 
